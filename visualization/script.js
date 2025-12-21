@@ -28,8 +28,8 @@ const aspect = w / h;
 const near = 0.1;
 const far = 10;
 
-const automaton = new Automaton(20, [4], [4], [5], moore3D()); 
-automaton.random(100)
+const automaton = new Automaton(15, [4], [4], [5], moore3D()); 
+automaton.random(200)
 const grid_size = Math.floor(automaton.getSize() / 2);
 const full_grid = grid_size * 2;
 const wire_size = 1.3;
