@@ -20,7 +20,7 @@ class Automata {
         this.currentState = new Uint8Array(totalCells);
         this.nextState = new Uint8Array(totalCells);
 
-        this.seedRandomSphere(Math.floor(this.gridSize / 4));
+        this.seedRandomSphere(Math.floor(this.gridSize / 64));
     }
 
     seedRandomSphere(radius, density = 0.1) {
