@@ -1,22 +1,38 @@
 import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
 
 
+let automata = new Automata();
+let instancedMesh;
+const dummy = new THREE.Object3D(); // Helper to calculate matrices
+const colorHelper = new THREE.Color();
 
+// -------------------- PARAMETERS --------------------
+const wire_size = 1.3;
+let playing = false;
+let frameCount = 0;
+const frameSkip = 5; 
+const w = window.innerWidth;
+const h = window.innerHeight;
+const fov = 75;
+const aspect = w / h;
+const near = 0.1;
+const far = 10;
 
-// Rules
-function* range(start, end, step = 1) {
-    for (let i = start; i < end; i += step) {
-        yield i;
+// -------------- Setup ------------------------------
+function parseRule(str) {
+    const result = [];
+
+    for (const token of str.split(/[,\s]+/)) {
+        if (token.includes("-")) {
+            const [a, b] = token.split("-").map(Number);
+            for (let i = a; i <= b; i++) result.push(i);
+        } else {
+            result.push(Number(token));
+        }
     }
-}
 
-function xyzToRGB(x, y, z, grid_size) {
-    const r = (x + grid_size) / (2 * grid_size); // 0 → 1
-    const g = (y + grid_size) / (2 * grid_size); // 0 → 1
-    const b = (z + grid_size) / (2 * grid_size); // 0 → 1
-    return new THREE.Color(r, g, b);
+    return result;
 }
-
 
 function vonNeumann3D() {
     return [
@@ -36,27 +52,12 @@ function moore3D(r = 1) {
     }
     return n;
 }
-// -------------------- PARAMETERS --------------------
-let frameCount = 0;
-const frameSkip = 5; 
-const w = window.innerWidth;
-const h = window.innerHeight;
-const fov = 75;
-const aspect = w / h;
-const near = 0.1;
-const far = 10;
-
-const automaton = new Automaton(25, [...range(9, 26)], [...range(5, 7), ...range(12, 13), 15], 2, moore3D()); 
-automaton.randomSphere(8, 0.3)
-const grid_size = Math.floor(automaton.getSize() / 2);
-const full_grid = grid_size * 2;
-const wire_size = 1.3;
-const cell_size = wire_size / full_grid; 
 
 // -------------------- SCENE SETUP --------------------
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 camera.position.z = 2;
+
 
 const renderer = new THREE.WebGLRenderer({
     antialias: false,
@@ -72,63 +73,76 @@ const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
 const wireframeCube = new THREE.LineSegments(edges, lineMaterial);
 scene.add(wireframeCube);
 
-// -------------------- PERSISTENT CUBES --------------------
-const cubes = []; 
+window.generate = async () => {
+    const N = parseInt(document.getElementById("grid").value);
+    const sRule = parseRule(document.getElementById("survive").value);
+    const bRule = parseRule(document.getElementById("birth").value);
+    const decay = parseInt(document.getElementById("decay").value);
+    const neighbors = (document.getElementById("neighborhood").value === "m") ? moore3D() : vonNeumann3D();
 
-for (let i = -grid_size; i < grid_size; i++) {
-    for (let j = -grid_size; j < grid_size; j++) {
-        for (let k = -grid_size; k < grid_size; k++) {
-            const geo = new THREE.BoxGeometry(cell_size, cell_size, cell_size);
-            const mat = new THREE.MeshBasicMaterial({ color: 0xff0011});
-            const cube = new THREE.Mesh(geo, mat.clone());
+    automata.init(N, sRule, bRule, decay, neighbors);
 
-            const edge = new THREE.EdgesGeometry(geo);
-            const wire = new THREE.LineBasicMaterial({ color: 0xffffff });
-            const wireCube = new THREE.LineSegments(edge, wire);
-            cube.add(wireCube);
+    if (instancedMesh) wireframeCube.remove(instancedMesh);
 
-            cube.position.x = (i + grid_size + 0.5) * cell_size - wire_size / 2;
-            cube.position.y = (j + grid_size + 0.5) * cell_size - wire_size / 2;
-            cube.position.z = (k + grid_size + 0.5) * cell_size - wire_size / 2;
+    const cell_size = wire_size / N;
+    const geometry = new THREE.BoxGeometry(cell_size, cell_size, cell_size);
+    const material = new THREE.MeshBasicMaterial();
+    
+    instancedMesh = new THREE.InstancedMesh(geometry, material, N * N * N);
+    wireframeCube.add(instancedMesh);
+    
+    updateVisuals();
+};
 
-            cube.visible = false; 
-            wireframeCube.add(cube);
-            cubes.push({ cube, i, j, k });
+window.play = () =>{
+    playing = true;
+}
+window.stop = () =>{
+    playing = false;
+}
+
+function updateVisuals() {
+    const N = automata.gridSize;
+    const cell_size = wire_size / N;
+    const offset = wire_size / 2;
+    let idx = 0;
+
+    for (let z = 0; z < N; z++) {
+        for (let y = 0; y < N; y++) {
+            for (let x = 0; x < N; x++) {
+                const state = automata.currentState[idx];
+                
+                if (state > 0) {
+                    dummy.position.set(x * cell_size - offset, y * cell_size - offset, z * cell_size - offset);
+                    dummy.scale.set(1, 1, 1); 
+                    
+                    const hue = (state / automata.initialState) * 0.1 + 0.5;
+                    colorHelper.setHSL(hue, 0.8, 0.5);
+                    instancedMesh.setColorAt(idx, colorHelper);
+                } else {
+                    dummy.scale.set(0, 0, 0);
+                }
+                
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(idx, dummy.matrix);
+                idx++;
+            }
         }
     }
+    instancedMesh.instanceMatrix.needsUpdate = true;
+    if (instancedMesh.instanceColor) instancedMesh.instanceColor.needsUpdate = true;
 }
 
-// -------------------- SIMULATION --------------------
-function simulate() {
-    automaton.step()
-    cubes.forEach(({cube, i, j, k }) => {
-        let s = automaton.getState(i + grid_size, j + grid_size, k + grid_size);
-        if (s === 0) {
-            cube.visible = false;
-            return;
-        }
-       cube.visible = true;
-
-        const rgbColor = xyzToRGB(i, j, k, grid_size);
-
-
-        const t = Math.min(s / automaton.initial_state, 1);
-        rgbColor.multiplyScalar(0.3 + 0.7 * t); 
-
-        cube.material.color.copy(rgbColor);
-    });
-}
-
-// -------------------- ANIMATION --------------------
-
+// -------------------- MAIN LOOP --------------------
 function animate() {
     requestAnimationFrame(animate);
-    frameCount++;
-    if (frameCount % frameSkip === 0) {
-        wireframeCube.rotation.y += 0.001; 
-        simulate();
+    
+    if (playing) {
+        automata.step();
+        updateVisuals();
     }
+    wireframeCube.rotation.y += 0.001; 
 
     renderer.render(scene, camera);
 }
-animate();
+animate()

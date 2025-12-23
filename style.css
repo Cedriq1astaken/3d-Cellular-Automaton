@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Balsamiq+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+body {
+    margin: 0;
+}
+#canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+
+}
+.panel{
+    position: absolute;
+    bottom: 0;
+    right: 20px;
+    width: 320px;
+    height: 500px;
+
+    display: flex;
+    flex-direction: column;
+
+    background: whitesmoke;
+    border: 3px solid #999;
+    border-bottom: none;
+    border-radius: 18px 18px 0 0;
+
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-family: "Balsamiq Sans", sans-serif;
+}
+
+.top-bar{
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding-left: 16px;
+
+    background: cornflowerblue;
+    color: whitesmoke;
+    font-size: 18px;
+    font-weight: bold;
+
+    border-radius: 15px 15px 0 0;
+}
+
+.settings{
+    flex: 1;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.settings label{
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+    color: #333;
+}
+
+.settings input,
+.settings select{
+    margin-top: 4px;
+    padding: 6px 8px;
+
+    border-radius: 6px;
+    border: 1px solid #bbb;
+    font-size: 14px;
+}
+
+.settings input[readonly]{
+    background: #eee;
+    color: #555;
+}
+
+.row{
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+button{
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: none;
+
+    background: #ddd;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover{
+    background: #ccc;
+}
+
+button.primary{
+    background: cornflowerblue;
+    color: white;
+}
+
+button.primary:hover{
+    background: #4a74d6;
+}
+
+button.secondary{
+    background: #FF746C;
+    color: white;
+}
+
+button.secondary:hover{
+    background: #FC0B00;
+}
+
+.status{
+    margin-top: auto;
+}

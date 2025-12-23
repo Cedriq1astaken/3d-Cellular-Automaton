@@ -4,24 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Cellular Automaton</title>
-    
-    <style>
-        body {
-            margin: 0;
-        }
-        #canvas {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-
-        }
-    </style>
-
+    <link href="./style.css" rel="stylesheet">
+    <script defer src="./simulation/automaton.js"></script>
+    <script defer type="module" src="./visualization/script.js"></script>
 </head>
 <body>
     <canvas id="canvas"></canvas>
-    <script src="./simulation/automaton.js"></script>
-    <script type="module" src="./visualization/script.js"></script>
+    <div class="panel">
+        <div class="top-bar" onclick="">Simulation Settings</div>
+
+        <div class="settings">
+            <label>
+                Survivability rule
+                <input id="survive" type="text" placeholder="e.g. 5–7">
+            </label>
+
+            <label>
+                Birth rule
+                <input id="birth" type="text" placeholder="e.g. 6">
+            </label>
+
+            <label>
+                Decay rule
+                <input id="decay" type="text" placeholder="e.g. 2">
+            </label>
+
+            <label>
+                Neighborhood
+                <select id="neighborhood">
+                    <option value="m">Moore 3D</option>
+                    <option value="vn">Von Neumann 3D</option>
+                </select>
+            </label>
+
+            <label>
+                Grid size
+                <input id="grid" type="text" placeholder="e.g. 20">
+            </label>
+            
+
+            <div class="row">
+                <button onclick="generate()">Generate</button>
+                <button class="primary" onclick="play()">Start</button>
+                <button class="secondary" onclick="stop()">Stop</button>
+            </div>
+
+            <label class="status">
+                Status
+                <input id="status" type="text" readonly value="Not Ready">
+            </label>
+        </div>
+    </div>
+
 
 </body>
 </html>
